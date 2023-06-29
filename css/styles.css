@@ -1,0 +1,162 @@
+:root {
+  --main-background-color: white;
+  --board-background-color: white;
+  --board-line-color: black;
+  --board-line-style: 2px solid var(--board-line-color);
+  --cell-size: 100px;
+
+  --mark-size: calc(var(--cell-size) * 0.8);
+  --mark-weight: calc(var(--mark-size) * 0.1);
+  --mark-x-color: black;
+  --mark-circle-color: black;
+
+  --mark-hover-size: calc(var(--cell-size) * 0.6);
+  --mark-hover-weight: calc(var(--mark-hover-size) * 0.1);
+  /* RELATIVE COLORS WOULD BE NICE TO MANIPULATE EXISTING VAR, BUT CURRENTLY UNSUPPORTED
+  --mark-x-hover-color: rgb(from var(--mark-x-color) r g b / 0.5); */
+  --mark-x-hover-color: lightgrey;
+  --mark-circle-hover-color: lightgrey;
+}
+
+*, 
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+/* Game board styles */
+.board {
+  height: 100vh;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: center;
+  align-content: center;
+  justify-items: center;
+  align-items: center;
+}
+
+/* Select ::before and ::after of .cell on hover, only if .board has x class, and .cell doesn't have x or circle class  */
+.board.x .cell:not(.x):not(.circle):hover::before,
+.board.x .cell:not(.x):not(.circle):hover::after {
+  content: '';
+  background-color: var(--mark-x-hover-color);
+  width: var(--mark-hover-weight);
+  height: var(--mark-hover-size);
+  /* SHOULD BE THIS, BUT sqrt AND pow NOT WIDELY SUPPORTED YET!! */
+  /* height: calc(sqrt(pow(var(--mark-size, 2)) + pow(var(--mark-size, 2)))); */
+  /* OR BUILT IN: hypot(var(--mark-size), var(--mark-size)) */
+  position: absolute;
+}
+
+.board.circle .cell:not(.x):not(.circle):hover::before {
+height: var(--mark-hover-size);
+width: var(--mark-hover-size);
+background-color: var(--mark-circle-hover-color);
+}
+
+.board.circle .cell:not(.x):not(.circle):hover::after {
+height: calc(var(--mark-hover-size) - (var(--mark-hover-weight) * 2));
+width: calc(var(--mark-hover-size) - (var(--mark-hover-weight) * 2));
+background-color: var(--board-background-color);
+}
+
+.cell {
+  height: var(--cell-size);
+  width: var(--cell-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.cell:first-child,
+.cell:nth-child(2),
+.cell:nth-child(3) {
+  border-bottom: var(--board-line-style);
+}
+
+.cell:nth-child(3n + 1) {
+  border-right: var(--board-line-style);
+}
+
+.cell:nth-child(3n + 0) {
+  border-left: var(--board-line-style);
+}
+
+.cell:nth-child(7),
+.cell:nth-child(8),
+.cell:last-child {
+  border-top: var(--board-line-style);
+}
+
+
+/* X and Circle Styles */
+.cell.x::before,
+.cell.x::after {
+  content: '';
+  background-color: var(--mark-x-color);
+  width: var(--mark-weight);
+  height: var(--mark-size);
+  position: absolute;
+}
+
+.board.x .cell:not(.x):not(.circle):hover::before,
+.cell.x::before {
+  rotate: 45deg;
+}
+
+.board.x .cell:not(.x):not(.circle):hover::after,
+.cell.x::after {
+  rotate: -45deg;
+}
+
+.board.circle .cell:not(.x):not(.circle):hover::before,
+.board.circle .cell:not(.x):not(.circle):hover::after,
+.cell.circle::before,
+.cell.circle::after {
+  content: '';
+  border-radius: 50%;
+  position: absolute;
+}
+
+.cell.circle::before {
+  height: var(--mark-size);
+  width: var(--mark-size);
+  background-color: var(--mark-circle-color);
+}
+
+.cell.circle::after {
+  height: calc(var(--mark-size) - (var(--mark-weight) * 2));
+  width: calc(var(--mark-size) - (var(--mark-weight) * 2));
+  background-color: var(--board-background-color);
+}
+
+
+/* Result popup styles */
+.result-container {
+  background-color: rgba(0, 0, 0, 0.8);
+  position: fixed;
+  inset: 0; /* shorthand for top, right, bottom, left */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+}
+
+.result-card {
+  background-color: white;
+  font-size: 2rem;
+  height: calc(var(--cell-size) * 3);
+  width: calc(var(--cell-size) * 3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
