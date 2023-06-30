@@ -3,7 +3,7 @@
   --board-background-color: white;
   --board-line-color: black;
   --board-line-style: 2px solid var(--board-line-color);
-  --cell-size: 100px;
+  --cell-size: 125px;
 
   --mark-size: calc(var(--cell-size) * 0.8);
   --mark-weight: calc(var(--mark-size) * 0.1);
@@ -16,6 +16,15 @@
   --mark-x-hover-color: rgb(from var(--mark-x-color) r g b / 0.5); */
   --mark-x-hover-color: lightgrey;
   --mark-circle-hover-color: lightgrey;
+
+  --result-background-color: rgba(0, 0, 0, 0.8);
+  --result-card-color: white;
+  --switch-height: 34px;
+  --switch-width: 60px;
+  --switch-edge-gap: 4px;
+  --slider-size: calc(min(var(--switch-height), var(--switch-width)) - (var(--switch-edge-gap) * 2));
+  --switch-off-color: grey;
+  --switch-on-color: blue;
 }
 
 *, 
@@ -139,19 +148,25 @@ background-color: var(--board-background-color);
 }
 
 
-/* Result popup styles */
-.result-container {
-  background-color: rgba(0, 0, 0, 0.8);
+/* Welcome and Result popup styles */
+#welcome-container.hidden,
+#result-container.hidden {
+  display: none;
+}
+
+#welcome-container,
+#result-container {
+  background-color: var(--result-background-color);
   position: fixed;
   inset: 0; /* shorthand for top, right, bottom, left */
   display: flex;
   justify-content: center;
   align-items: center;
-  visibility: hidden;
 }
 
+.welcome-card,
 .result-card {
-  background-color: white;
+  background-color: var(--result-card-color);
   font-size: 2rem;
   height: calc(var(--cell-size) * 3);
   width: calc(var(--cell-size) * 3);
@@ -159,4 +174,52 @@ background-color: var(--board-background-color);
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.switch-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Hide default HTML checkbox */
+.mark-select-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mark-select-switch {
+  position: relative;
+  display: inline-block;
+  height: var(--switch-height);
+  width: var(--switch-width);
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--switch-off-color);
+  transition: 0.4s;
+}
+
+.slider:before {
+  content: '';
+  background-color: var(--result-card-color);
+  height: var(--slider-size);
+  width: var(--slider-size);
+  position: absolute;
+  left: var(--switch-edge-gap);
+  bottom: var(--switch-edge-gap);
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: var(--switch-on-color);
+}
+
+input:checked + .slider:before {
+  translate: calc(var(--switch-width) - (var(--switch-edge-gap) * 2) - var(--slider-size));
 }
