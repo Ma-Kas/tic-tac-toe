@@ -6,26 +6,21 @@ const SINGLE = 'singleplayer';
 const MULTI = 'multiplayer';
 
 
-// Factory functions
-const playerFactory = (name, mark) => {
-  return { name, mark };
-};
-
-const player1 = playerFactory('player 1', 'whatever checkbox selected');
-const player2 = playerFactory('player 2', 'whatever checkbox not selected');
-
-
 // Modules
 const boardController = (() => {
   const markSelectCheckbox = document.getElementById('mark-selector');
   const boardCells = document.querySelectorAll('.cell');
-  const gameBoard = document.getElementById('board');
+  const _gameBoard = document.querySelector('.board');
 
   let _currentBoardArray = [
     [EMPTY, EMPTY, EMPTY],
     [EMPTY, EMPTY, EMPTY],
     [EMPTY, EMPTY, EMPTY]
   ]
+
+  const getGameBoardDOM = () => {
+    return _gameBoard;
+  }
 
   const getCurrentBoard = () => {
     return _currentBoardArray;
@@ -55,15 +50,15 @@ const boardController = (() => {
     });
   
     // clear board class list, add X, as X goes first
-    gameBoard.classList.remove(X);
-    gameBoard.classList.remove(CIRCLE);
-    gameBoard.classList.add(X);
+    _gameBoard.classList.remove(X);
+    _gameBoard.classList.remove(CIRCLE);
+    _gameBoard.classList.add(X);
   }
 
   return {
     markSelectCheckbox,
-    gameBoard,
     boardCells,
+    getGameBoardDOM,
     getCurrentBoard,
     setCurrentBoard,
     boardSetup,
@@ -97,6 +92,8 @@ const gameController = (() => {
     const twoPlayerBtn = document.getElementById('two-player-button');
   
     welcomeContainer.classList.remove('hidden');
+
+    currentTurn = X;
   
     singlePlayerBtn.addEventListener('click', (e) => {
       // Start a game against CPU
@@ -105,7 +102,7 @@ const gameController = (() => {
       displayController.togglePopupVisibility(welcomeContainer, 'hide');
       boardController.boardSetup();
 
-      placeAiMark();
+      handleAiTurn();
     });
     
     twoPlayerBtn.addEventListener('click', (e) => {
@@ -125,6 +122,11 @@ const gameController = (() => {
   function handleCellClick(e) {
     const currentCell = e.target;
   
+    // don't allow clicks if current turn is not player turn in singleplayer mode
+    if ((_gameMode === SINGLE) && (currentTurn !== _playerMark)) {
+      return;
+    }
+
     placeMark(currentCell);
     if (checkForWin()) {
       endGame(false);
@@ -133,7 +135,7 @@ const gameController = (() => {
     } else {
       switchTurn();
 
-      placeAiMark();
+      handleAiTurn();
     }
   }
 
@@ -147,10 +149,33 @@ const gameController = (() => {
     boardController.getCurrentBoard()[row][column] = currentTurn;
   }
 
-  function placeAiMark() {
+  function handleAiTurn() {
     if ((_gameMode === SINGLE) && (currentTurn === _opponentMark)) {
+      // Disable player's hover ability during ai turn
+      boardController.getGameBoardDOM().classList.add('ai-turn');
+
+      // Minimax algorithm gets best move for ai
       let coordinates = aiController.findBestMove(boardController.getCurrentBoard());
-      console.log(coordinates);
+      
+      // Short timeout before ai makes move for aesthetics
+      setTimeout(() => {
+        boardController.boardCells.forEach(cell => {
+          if (cell.dataset.coord === coordinates.toString()) {
+            placeMark(cell);
+          } 
+        });
+  
+        if (checkForWin()) {
+          endGame(false);
+        } else if (checkForDraw()) {
+          endGame(true);
+        } else {
+          switchTurn();
+        }
+
+        // Re-enable player's hover ability after ai turn
+        boardController.getGameBoardDOM().classList.remove('ai-turn');  
+      }, 500);    
     }
   }
 
@@ -170,40 +195,45 @@ const gameController = (() => {
   }
 
   function switchTurn() {
-    boardController.gameBoard.classList.remove(currentTurn);
+    boardController.getGameBoardDOM().classList.remove(currentTurn);
     currentTurn = (currentTurn === CIRCLE) ? X : CIRCLE;
-    boardController.gameBoard.classList.add(currentTurn);
-  }
+    boardController.getGameBoardDOM().classList.add(currentTurn);
+    }
 
   function endGame(isDraw) {
     if (isDraw) {
       displayController.resultMessage.textContent = `Draw!`;
     } else {
-      displayController.resultMessage.textContent = `${currentTurn} wins!`;
+      const winner = (currentTurn === X) ? 'X' : 'Circle'; 
+      displayController.resultMessage.textContent = `${winner} Wins!`;
     }
     displayController.togglePopupVisibility(displayController.resultContainer, 'show');
   }
 
-  function resetGame() {
+  function resetGame(reset) {
+    boardController.getGameBoardDOM().classList.remove(X);
+    boardController.getGameBoardDOM().classList.remove(CIRCLE);
+
     boardController.boardCells.forEach(cell => {
       cell.classList.remove(X);
       cell.classList.remove(CIRCLE);
     });
   
-    currentTurn = X;
-    boardController.boardSetup();
-  
     displayController.togglePopupVisibility(displayController.resultContainer, 'hide');
 
-    placeAiMark();
+    if (reset) {
+      currentTurn = X;
+      boardController.boardSetup();
+      handleAiTurn();
+    }
   }
 
   _resetBtn.addEventListener('click', (e) => {
-    resetGame();
+    resetGame(true);
   });
   
   _exitBtn.addEventListener('click', (e) => {
-    resetGame();
+    resetGame(false);
     startGame();
   });
 
@@ -213,7 +243,7 @@ const gameController = (() => {
     getOpponentMark,
     startGame,
     handleCellClick,
-    placeAiMark,
+    handleAiTurn,
     checkForWin,
     checkForDraw,
     switchTurn,
@@ -256,7 +286,6 @@ const aiController = (() => {
     return false;
   }
 
-  // This function returns +10 if AI has won, -10 if player has won, 0 otherwise
   function _evaluateGameState(board) {
     // Check for AI victory on rows
     for(let row = 0; row < 3; row++) {
@@ -313,12 +342,12 @@ const aiController = (() => {
   function _minimax(board, depth, isMax) {
     let score = _evaluateGameState(board);
 
-    // If Maximizer has won the game return his/her evaluated score
+    // If Maximizer has won the game return evaluated score
     if (score === 10) {
       return score;
     }
 
-    // If Minimizer has won the game return his/her evaluated score
+    // If Minimizer has won the game return evaluated score
     if (score === -10) {
       return score;
     }

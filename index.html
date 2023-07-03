@@ -27,24 +27,26 @@
   <div class="welcome-container" id="welcome-container">
     <div class="welcome-card">
       <div class="welcome-heading">Tic Tac Toe</div>
-      <div class="switch-container">
-        <label class="switch-label">X</label>
-        <label class="mark-select-switch">
-          <input type="checkbox" id="mark-selector">
-          <span class="slider"></span>
-        </label>
-        <label class="switch-label">O</label>
-      </div>
-      <div class="welcome-buttons">
-        <button id="single-player-button">vs CPU</button>
-        <button id="two-player-button">vs Player</button>
+      <div class="welcome-content">
+        <div class="switch-container">
+          <label class="switch-label">X</label>
+          <label class="mark-select-switch">
+            <input type="checkbox" id="mark-selector">
+            <span class="slider"></span>
+          </label>
+          <label class="switch-label">O</label>
+        </div>
+        <div class="welcome-buttons">
+          <button id="single-player-button">Singleplayer</button>
+          <button id="two-player-button">Multiplayer</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="result-container hidden" id="result-container">
     <div class="result-card">
-      <div data-result-card-text>X wins!</div>
+      <div class="result-heading" data-result-card-text>X wins!</div>
       <div class="result-buttons">
         <button id="reset-button">Reset</button>
         <button id="exit-button">Exit</button>

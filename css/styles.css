@@ -10,7 +10,7 @@
   --mark-x-color: black;
   --mark-circle-color: black;
 
-  --mark-hover-size: calc(var(--cell-size) * 0.6);
+  --mark-hover-size: calc(var(--cell-size) * 0.5);
   --mark-hover-weight: calc(var(--mark-hover-size) * 0.1);
   /* RELATIVE COLORS WOULD BE NICE TO MANIPULATE EXISTING VAR, BUT CURRENTLY UNSUPPORTED
   --mark-x-hover-color: rgb(from var(--mark-x-color) r g b / 0.5); */
@@ -24,7 +24,7 @@
   --switch-edge-gap: 4px;
   --slider-size: calc(min(var(--switch-height), var(--switch-width)) - (var(--switch-edge-gap) * 2));
   --switch-off-color: grey;
-  --switch-on-color: blue;
+  --switch-on-color: black;
 }
 
 *, 
@@ -41,6 +41,7 @@ body {
 
 /* Game board styles */
 .board {
+  pointer-events: auto;
   height: 100vh;
   width: 100vw;
   display: grid;
@@ -49,6 +50,10 @@ body {
   align-content: center;
   justify-items: center;
   align-items: center;
+}
+
+.board.ai-turn {
+  pointer-events: none;
 }
 
 /* Select ::before and ::after of .cell on hover, only if .board has x class, and .cell doesn't have x or circle class  */
@@ -168,12 +173,35 @@ background-color: var(--board-background-color);
 .result-card {
   background-color: var(--result-card-color);
   font-size: 2rem;
-  height: calc(var(--cell-size) * 3);
+  height: calc(var(--cell-size) * 4);
   width: calc(var(--cell-size) * 3);
+  padding: 3rem 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+}
+
+.welcome-heading,
+.result-heading {
+  font-size: 2.75rem;
+}
+
+button {
+  background-color: var(--result-card-color);
+  font-size: 1.25rem;
+  width: 100%;
+  margin-top: 1rem;
+  border: var(--board-line-style);
+  padding: 0.5rem 0.75rem;
+}
+
+button:first-child {
+  margin-top: 2rem;
+}
+
+button:hover {
+  scale: 105%;
 }
 
 .switch-container {
