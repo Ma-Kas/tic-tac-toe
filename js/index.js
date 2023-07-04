@@ -30,14 +30,6 @@ const boardController = (() => {
     _currentBoardArray[row][column] = value;
   }
 
-  function _resetBoardArray() {
-    _currentBoardArray.forEach(row => {
-      row.forEach((_element, index) => {
-        row[index] = EMPTY;
-      });
-    });
-  }
-
   function boardSetup() {
     _resetBoardArray();
   
@@ -53,6 +45,14 @@ const boardController = (() => {
     _gameBoard.classList.remove(X);
     _gameBoard.classList.remove(CIRCLE);
     _gameBoard.classList.add(X);
+  }
+
+  function _resetBoardArray() {
+    _currentBoardArray.forEach(row => {
+      row.forEach((_element, index) => {
+        row[index] = EMPTY;
+      });
+    });
   }
 
   return {
@@ -86,6 +86,11 @@ const gameController = (() => {
     return _opponentMark;
   }
 
+  function _setPlayerOpponentMarks() {
+    _playerMark = boardController.markSelectCheckbox.checked ? CIRCLE : X;
+    _opponentMark = (_playerMark === CIRCLE) ? X : CIRCLE;
+  }
+
   function startGame() {
     const welcomeContainer = document.getElementById('welcome-container');
     const singlePlayerBtn = document.getElementById('single-player-button');
@@ -96,27 +101,75 @@ const gameController = (() => {
     currentTurn = X;
   
     singlePlayerBtn.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
       // Start a game against CPU
       _gameMode = SINGLE;
       _setPlayerOpponentMarks();
       displayController.togglePopupVisibility(welcomeContainer, 'hide');
       boardController.boardSetup();
 
-      handleAiTurn();
-    });
+      if (currentTurn === _opponentMark) {
+        _handleAiTurn();
+      }
+
+    }, { once: true });
     
     twoPlayerBtn.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
       // Start a game against other player
       _gameMode = MULTI;
       _setPlayerOpponentMarks();
       displayController.togglePopupVisibility(welcomeContainer, 'hide');
       boardController.boardSetup();
-    });
+    }, { once: true });
   }
 
-  function _setPlayerOpponentMarks() {
-    _playerMark = boardController.markSelectCheckbox.checked ? CIRCLE : X;
-    _opponentMark = (_playerMark === CIRCLE) ? X : CIRCLE;
+  function _handlePlayerTurn(currentCell) {
+    _placeMark(currentCell);
+
+    if (_checkForWin()) {
+      _endGame(false);
+    } else if (_checkForDraw()) {
+      _endGame(true);
+    } else {
+      _switchTurn()
+      
+      if (_gameMode === SINGLE) {
+        _handleAiTurn();
+      }
+    }
+  }
+
+  function _handleAiTurn() {
+    if (currentTurn !== _opponentMark) {
+      return;
+    }
+
+    // Disable player's hover ability during ai turn
+    boardController.getGameBoardDOM().classList.add('ai-turn');
+
+    // Minimax algorithm gets best move for ai
+    let coordinates = aiController.findBestMove(boardController.getCurrentBoard());
+    
+    // Short timeout before ai makes move for aesthetics
+    setTimeout(() => {
+      boardController.boardCells.forEach(cell => {
+        if (cell.dataset.coord === coordinates.toString()) {
+          _placeMark(cell);
+        } 
+      });
+
+      if (_checkForWin()) {
+        _endGame(false);
+      } else if (_checkForDraw()) {
+        _endGame(true);
+      } else {
+        _switchTurn();
+      }
+
+      // Re-enable player's hover ability after ai turn
+      boardController.getGameBoardDOM().classList.remove('ai-turn');  
+    }, 500); 
   }
 
   function handleCellClick(e) {
@@ -125,21 +178,11 @@ const gameController = (() => {
     // don't allow clicks if current turn is not player turn in singleplayer mode
     if ((_gameMode === SINGLE) && (currentTurn !== _playerMark)) {
       return;
-    }
-
-    placeMark(currentCell);
-    if (checkForWin()) {
-      endGame(false);
-    } else if (checkForDraw()) {
-      endGame(true);
-    } else {
-      switchTurn();
-
-      handleAiTurn();
-    }
+    } 
+    _handlePlayerTurn(currentCell);
   }
 
-  function placeMark(currentCell) {
+  function _placeMark(currentCell) {
     // add currentTurn's mark class to CSS for visual
     currentCell.classList.add(currentTurn);
     
@@ -149,37 +192,7 @@ const gameController = (() => {
     boardController.getCurrentBoard()[row][column] = currentTurn;
   }
 
-  function handleAiTurn() {
-    if ((_gameMode === SINGLE) && (currentTurn === _opponentMark)) {
-      // Disable player's hover ability during ai turn
-      boardController.getGameBoardDOM().classList.add('ai-turn');
-
-      // Minimax algorithm gets best move for ai
-      let coordinates = aiController.findBestMove(boardController.getCurrentBoard());
-      
-      // Short timeout before ai makes move for aesthetics
-      setTimeout(() => {
-        boardController.boardCells.forEach(cell => {
-          if (cell.dataset.coord === coordinates.toString()) {
-            placeMark(cell);
-          } 
-        });
-  
-        if (checkForWin()) {
-          endGame(false);
-        } else if (checkForDraw()) {
-          endGame(true);
-        } else {
-          switchTurn();
-        }
-
-        // Re-enable player's hover ability after ai turn
-        boardController.getGameBoardDOM().classList.remove('ai-turn');  
-      }, 500);    
-    }
-  }
-
-  function checkForWin() {
+  function _checkForWin() {
     return WINNING_COMBINATIONS.some(combination => {
       return combination.every(index => {
         return boardController.boardCells[index].classList.contains(currentTurn);
@@ -187,20 +200,20 @@ const gameController = (() => {
     });
   }
   
-  function checkForDraw() {
+  function _checkForDraw() {
     // boardCells is NodeList, not array, so need to spread first with [...]
     return [...boardController.boardCells].every(cell => {
       return cell.classList.contains(X) || cell.classList.contains(CIRCLE);
     });
   }
 
-  function switchTurn() {
+  function _switchTurn() {
     boardController.getGameBoardDOM().classList.remove(currentTurn);
     currentTurn = (currentTurn === CIRCLE) ? X : CIRCLE;
     boardController.getGameBoardDOM().classList.add(currentTurn);
     }
 
-  function endGame(isDraw) {
+  function _endGame(isDraw) {
     if (isDraw) {
       displayController.resultMessage.textContent = `Draw!`;
     } else {
@@ -210,7 +223,7 @@ const gameController = (() => {
     displayController.togglePopupVisibility(displayController.resultContainer, 'show');
   }
 
-  function resetGame(reset) {
+  function _resetGame(reset) {
     boardController.getGameBoardDOM().classList.remove(X);
     boardController.getGameBoardDOM().classList.remove(CIRCLE);
 
@@ -224,16 +237,16 @@ const gameController = (() => {
     if (reset) {
       currentTurn = X;
       boardController.boardSetup();
-      handleAiTurn();
+      _handleAiTurn();
     }
   }
 
   _resetBtn.addEventListener('click', (e) => {
-    resetGame(true);
+    _resetGame(true);
   });
   
   _exitBtn.addEventListener('click', (e) => {
-    resetGame(false);
+    _resetGame(false);
     startGame();
   });
 
@@ -243,12 +256,6 @@ const gameController = (() => {
     getOpponentMark,
     startGame,
     handleCellClick,
-    handleAiTurn,
-    checkForWin,
-    checkForDraw,
-    switchTurn,
-    endGame,
-    resetGame,
   }
 })();
 
@@ -344,12 +351,12 @@ const aiController = (() => {
 
     // If Maximizer has won the game return evaluated score
     if (score === 10) {
-      return score;
+      return score - depth;
     }
 
     // If Minimizer has won the game return evaluated score
     if (score === -10) {
-      return score;
+      return score + depth;
     }
 
     // If there are no more moves and no winner then it is a tie
